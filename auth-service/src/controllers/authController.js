@@ -5,6 +5,7 @@ import {
   generateRefreshToken,
   generateVerificationToken,
 } from "../utils/generateToken.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../services/emailService.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -63,6 +64,20 @@ export const registerUser = async (req, res) => {
     user.refreshToken = refreshToken;
 
     await user.save();
+
+    const emailSent = await sendVerificationEmail(
+      user.email,
+      user.name,
+      verificationToken
+    );
+
+    if (!emailSent.success) {
+      console.error("Failed to send verification email:", emailSent.error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send verification email",
+      });
+    }
 
     return res.status(201).json({
       success: true,
